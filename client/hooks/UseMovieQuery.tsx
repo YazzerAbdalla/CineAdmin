@@ -25,9 +25,9 @@ const useMovieQuery = ({ page }: { page: number }) => {
   }
 
   const {
-    error,
+    isError: error,
     data: movies,
-    isPending,
+    isLoading: isPending,
   } = useQuery({
     queryKey: ["movies", { page, debouncedSearchTerm, genre, selectedYear }],
     queryFn: async () => {

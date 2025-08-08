@@ -23,17 +23,18 @@ import { Trend } from './trends/entities/trend.entity';
 dotenv.config();
 
 const PORT = process.env.DB_PORT ? parseInt(process.env.DB_PORT) : '';
+console.log('🌍 NODE_ENV:', process.env.NODE_ENV);
 @Module({
   imports: [
     HttpModule,
     TypeOrmModule.forRoot({
       type: 'postgres',
-      host: process.env.DB_HOST || '172.17.0.2',
+      host: process.env.NODE_ENV === 'production' ? 'postgres' : 'localhost',
       port: PORT || 5432,
-      password: process.env.DB_PASSWORD,
-      username: process.env.DB_USER,
       database: process.env.DB_NAME,
-      synchronize: process.env.NODE_ENV !== 'production',
+      username: process.env.DB_USER,
+      password: process.env.DB_PASSWORD,
+      synchronize: process.env.NODE_ENV === 'production',
       logging: true,
       entities: [User, Movie, Comment, Rating, Trend],
     }),

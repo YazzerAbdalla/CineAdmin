@@ -4,15 +4,21 @@ import MovieCard from "./MovieCard";
 
 interface MoviesContainerProps {
   movies?: IMovie[];
+  isLoading: boolean;
 }
 
-const MoviesContainer: React.FC<MoviesContainerProps> = ({ movies }) => {
+const MoviesContainer: React.FC<MoviesContainerProps> = ({
+  movies,
+  isLoading,
+}) => {
   return (
     <div>
       {!movies || movies.length == 0 ? (
         <h1 className="text-gray-400 font-bold">
           There is no movies right now.
         </h1>
+      ) : isLoading ? (
+        <div className="text-gray-400">Loading...</div>
       ) : (
         <>
           {/* Movies Grid */}

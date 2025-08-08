@@ -6,6 +6,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { IMovie } from "@/types/movies";
 import { fetchTrendingMovies } from "@/api/movie-services";
+import { useQuery } from "@tanstack/react-query";
+import Error from "./Error";
 
 // Reusable UI Components
 const MovieBadge = ({ label }: { label: string }) => (
@@ -26,6 +28,8 @@ const SlideIndicator = ({
       isActive ? "bg-green-500 w-8" : "bg-white/30 hover:bg-white/50"
     }`}
     onClick={onClick}
+    type="button"
+    aria-label={isActive ? "Current slide" : "Go to slide"}
   />
 );
 
@@ -43,53 +47,92 @@ const NavButton = ({
     size="sm"
     className={`absolute ${position}-4 top-1/2 transform -translate-y-1/2 z-20 bg-black/50 hover:bg-black/70 text-white backdrop-blur-sm rounded-full w-12 h-12`}
     onClick={onClick}
+    type="button"
+    aria-label={position === "left" ? "Previous slide" : "Next slide"}
   >
     {children}
   </Button>
 );
 
 const HeroSlider = () => {
-  const [movies, setMovies] = useState<IMovie[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [autoPlay, setAutoPlay] = useState(true);
-  const [loading, setLoading] = useState(true);
+
+  const {
+    data: movies = [],
+    isLoading: loading,
+    isError,
+    refetch, // Add refetch function
+  } = useQuery<IMovie[], Error>({
+    queryKey: ["trending-movies"],
+    queryFn: fetchTrendingMovies,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+    retry: 2,
+    refetchOnWindowFocus: false,
+  });
 
   const nextSlide = useCallback(() => {
-    setCurrentIndex((prev) => (prev + 1) % movies.length);
+    if (movies.length > 0) {
+      setCurrentIndex((prev) => (prev + 1) % movies.length);
+    }
   }, [movies.length]);
 
   const prevSlide = useCallback(() => {
-    setCurrentIndex((prev) => (prev - 1 + movies.length) % movies.length);
+    if (movies.length > 0) {
+      setCurrentIndex((prev) => (prev - 1 + movies.length) % movies.length);
+    }
   }, [movies.length]);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        const result = await fetchTrendingMovies();
-        setMovies(result || []);
-      } catch (err) {
-        console.error("Failed to fetch trending movies", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, []);
 
   useEffect(() => {
     if (!autoPlay || movies.length === 0) return;
     const timer = setInterval(nextSlide, 5000);
     return () => clearInterval(timer);
-  }, [autoPlay, nextSlide, movies]);
+  }, [autoPlay, nextSlide, movies.length]);
+
+  // Reset current index if it exceeds movies array length
+  useEffect(() => {
+    if (movies.length > 0 && currentIndex >= movies.length) {
+      setCurrentIndex(0);
+    }
+  }, [movies.length, currentIndex]);
 
   const currentMovie = movies[currentIndex];
 
-  if (loading || !currentMovie) {
+  // Loading state
+  if (loading) {
     return (
-      <div className="h-[30vh] flex items-center justify-center text-white text-xl">
-        Loading...
+      <div className="h-[70vh] flex items-center justify-center rounded-2xl bg-gray-900">
+        <div className="flex flex-col items-center space-y-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500"></div>
+          <p className="text-white text-lg">Loading trending movies...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Error handling function
+  const handleRetry = async () => {
+    try {
+      await refetch();
+    } catch (err) {
+      console.error("Failed to refetch:", err);
+    }
+  };
+
+  // Error state - show when there's an error OR when no movies are available
+  if (isError || !currentMovie || movies.length === 0) {
+    return (
+      <div className="h-[70vh] flex items-center justify-center rounded-2xl">
+        <Error
+          title={isError ? "Failed to Load Movies" : "No Movies Available"}
+          message={
+            isError
+              ? "We were unable to fetch trending movies from the server. Please check your connection and try again."
+              : "No trending movies are currently available. Please check back later."
+          }
+          onRetry={handleRetry}
+        />
       </div>
     );
   }
@@ -105,9 +148,14 @@ const HeroSlider = () => {
         <Image
           src={currentMovie.posterUrl}
           alt={currentMovie.title}
-          className="object-contain"
+          className="object-contain w-full h-full"
           width={1200}
           height={675}
+          priority
+          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 100vw, 100vw"
+          onError={() => {
+            console.error(`Failed to load image: ${currentMovie.posterUrl}`);
+          }}
         />
         <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-transparent" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
@@ -119,9 +167,9 @@ const HeroSlider = () => {
           <div className="max-w-2xl">
             <div className="mb-4">
               <div className="flex flex-wrap gap-2 mb-4">
-                {currentMovie.genre?.map((g) => (
-                  <MovieBadge key={g} label={g} />
-                ))}
+                {currentMovie.genre?.map((g, index) => (
+                  <MovieBadge key={`${g}-${index}`} label={g} />
+                )) ?? null}
               </div>
 
               <h1 className="text-5xl md:text-6xl font-bold text-white mb-4 animate-fade-in">
@@ -132,7 +180,9 @@ const HeroSlider = () => {
                 <div className="flex items-center space-x-1">
                   <Star className="w-5 h-5 text-yellow-400 fill-current" />
                   <span className="text-white font-medium">
-                    {currentMovie.ratingAvg?.toFixed(1) ?? "N/A"}
+                    {currentMovie.ratingAvg != null
+                      ? currentMovie.ratingAvg.toFixed(1)
+                      : "N/A"}
                   </span>
                 </div>
                 <span className="text-gray-300">
@@ -173,25 +223,29 @@ const HeroSlider = () => {
         </div>
       </div>
 
-      {/* Navigation */}
-      <NavButton onClick={prevSlide} position="left">
-        <ChevronLeft className="w-6 h-6" />
-      </NavButton>
+      {/* Navigation - Only show if there are multiple movies */}
+      {movies.length > 1 && (
+        <>
+          <NavButton onClick={prevSlide} position="left">
+            <ChevronLeft className="w-6 h-6" />
+          </NavButton>
 
-      <NavButton onClick={nextSlide} position="right">
-        <ChevronRight className="w-6 h-6" />
-      </NavButton>
+          <NavButton onClick={nextSlide} position="right">
+            <ChevronRight className="w-6 h-6" />
+          </NavButton>
 
-      {/* Slide Indicators */}
-      <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 z-20 flex space-x-2">
-        {movies.map((_, index) => (
-          <SlideIndicator
-            key={index}
-            isActive={index === currentIndex}
-            onClick={() => setCurrentIndex(index)}
-          />
-        ))}
-      </div>
+          {/* Slide Indicators */}
+          <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 z-20 flex space-x-2">
+            {movies.map((_, index) => (
+              <SlideIndicator
+                key={`slide-${index}`}
+                isActive={index === currentIndex}
+                onClick={() => setCurrentIndex(index)}
+              />
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 };

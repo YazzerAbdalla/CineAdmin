@@ -38,10 +38,6 @@ const MoviesFilterContainer = () => {
     selectedYear,
   } = useMovieQuery({ page });
 
-  if (isPending) {
-    return <div>Loading...</div>;
-  }
-
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="bg-gray-900 rounded-2xl p-6 mb-8">
@@ -111,7 +107,7 @@ const MoviesFilterContainer = () => {
         <h1 className="text-red-400 font-semibold">Some thing went wrong.</h1>
       ) : (
         <div className="flex flex-col gap-3">
-          <MoviesContainer movies={movies} />
+          <MoviesContainer movies={movies} isLoading={isPending} />
           <MoviePagination page={page} setPage={setPage} />
         </div>
       )}
