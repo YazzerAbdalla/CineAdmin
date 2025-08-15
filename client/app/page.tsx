@@ -2,6 +2,7 @@
 import HeroSlider from "@/components/heroSlider";
 import MoviesFilterContainer from "@/components/MoviesFilterContainer";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { Suspense } from "react";
 
 const queryClient = new QueryClient();
 
@@ -13,7 +14,9 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <HeroSlider />
         </div>
-        <MoviesFilterContainer />
+        <Suspense fallback={<h1>Loading...</h1>}>
+          <MoviesFilterContainer />
+        </Suspense>
       </QueryClientProvider>
     </div>
   );

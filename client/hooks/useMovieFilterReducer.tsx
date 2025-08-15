@@ -1,3 +1,4 @@
+"use client";
 import { useReducer, useState } from "react";
 import { useDebounce } from "react-use";
 
