@@ -23,19 +23,19 @@ import { Trend } from './trends/entities/trend.entity';
 dotenv.config();
 
 const PORT = process.env.DB_PORT ? parseInt(process.env.DB_PORT) : '';
-console.log('🌍 NODE_ENV:', process.env.NODE_ENV);
 @Module({
   imports: [
     HttpModule,
     TypeOrmModule.forRoot({
       type: 'postgres',
-      host: process.env.NODE_ENV === 'production' ? 'postgres' : 'localhost',
+      host: 'aws-1-eu-west-3.pooler.supabase.com',
       port: PORT || 5432,
       database: process.env.DB_NAME,
       username: process.env.DB_USER,
       password: process.env.DB_PASSWORD,
       synchronize: process.env.NODE_ENV === 'production',
       logging: true,
+      // ssl: true,
       entities: [User, Movie, Comment, Rating, Trend],
     }),
     ThrottlerModule.forRoot({
