@@ -23,7 +23,6 @@ import {
   ApiInternalServerErrorResponse,
   ApiOkResponse,
 } from '@nestjs/swagger';
-import { SignInDto } from './dto/signInDto';
 
 @Controller('auth')
 export class AuthController {
@@ -73,10 +72,7 @@ export class AuthController {
       },
     },
   })
-  async login(
-    @Body() body: SignInDto,
-    @Request() request: LoginExtendedRequest,
-  ) {
+  async login(@Request() request: LoginExtendedRequest) {
     return await this.authService.login(request.user);
   }
 

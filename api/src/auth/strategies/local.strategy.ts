@@ -20,11 +20,12 @@ export class LocalStrategy extends PassportStrategy(Strategy) {
         throw new UnauthorizedException('Invalid email or password');
       }
 
-      if (!user.isEmailVerified) {
-        throw new UnauthorizedException(
-          'Email is not verified, Please check your inbox and verify your account.',
-        );
-      }
+      // if (!user.isEmailVerified) {
+      //   throw new UnauthorizedException(
+      //     'Email is not verified, Please check your inbox and verify your account.',
+      //   );
+      // }
+
       return user;
     } catch (error) {
       if (error instanceof UnauthorizedException) {

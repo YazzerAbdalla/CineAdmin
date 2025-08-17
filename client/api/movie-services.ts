@@ -92,9 +92,9 @@ export const updateSearchCount = async (movie: IMovie) => {
 
 export const fetchTrendingMovies = async () => {
   try {
-    const baseUrl = `${process.env.NEXT_PUBLIC_API_URL}/movies/trends`;
+    const url = `${baseUrl}/trends`;
 
-    const trendsMovies = await axios.get(baseUrl);
+    const trendsMovies = await axios.get(url);
 
     return trendsMovies.data;
   } catch (error) {
