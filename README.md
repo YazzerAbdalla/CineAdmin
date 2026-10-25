@@ -1,6 +1,6 @@
 # 🎬 CineAdmin
 
-**CineAdmin** is a powerful admin dashboard for managing a movie streaming platform. It provides full control over movies, users, and comments — with fast, modern UI and a secure, scalable backend.
+**CineAdmin** is a powerful admin dashboard for managing a movie review platform. It provides full control over movies, users, and comments — with fast, modern UI and a secure, scalable backend.
 
 ---
 
